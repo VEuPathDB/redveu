@@ -1,4 +1,4 @@
-#+title: RedVEu (Redmine for VEuPath)
+#+title: RedVEu (Redmine for VEuPath in Emacs)
 #+author: John Brestelli
 
 * Getting started
@@ -24,29 +24,30 @@ available from MELPA.  Install these packages as well.
 #+end_src
 
 ** Basics
-   1. Project and issue queries must (for now) be created and saved using redmine's web interface
-   2. Changes you make to the text in the org file will not be reflected in redmine.  To update tasks, you must run update commands
-   3. You can search for issues using pre defined query
+   1. Everything is run in "org-mode".  Open a file with the extension ".org" or turn on the mode manually.
+   2. Project and issue queries must (for now) be created and saved using redmine's web interface
+   3. Changes you make to the text in the org file will not be reflected in redmine.  To update tasks, you must run update commands
+   4. You can search for issues using a pre defined query
       #+begin_src emacs-lisp
       redveu/get-issues query_id
       #+end_src
-   4. Search for projects using pre defined query
+   5. Search for projects using a pre defined query
       #+begin_src emacs-lisp
       redveu/get-projects query_id
       #+end_src
-   5. When cursor is on a project, get all project-issues using predefined query
+   6. When cursor is on a project, get all project-issues using a pre defined query
       #+begin_src emacs-lisp
       redveu/get-project-issues query_id
       #+end_src
-   6. When cursor is on an issue, get all comments associated with issue 
+   7. When cursor is on an issue, get all comments and attachments associated with issue 
       #+begin_src emacs-lisp
       redveu/verbose-issue
       #+end_src
-   7. Link to create new issue for a project
-   8. Easily link to issue web page
-   9. Link to create subtask of an issue
-   10. Link to attachments
-   11. when cursor is on an issue, update issues using api (PUT)
+   8. Link to create new issue for a project
+   9. Link to issue web page
+   10. Link to create subtask of an issue
+   11. Link to attachments
+   12. when cursor is on an issue, update issues using api (PUT)
        #+begin_src emacs-lisp
        redveu/update-assigned-to
        redveu/update-status
@@ -55,7 +56,7 @@ available from MELPA.  Install these packages as well.
        redveu/update-subject
        redveu/add-comment
        #+end_src
-       - can uses interactive autocomplete
+       - uses tab complete
        - fetches and caches available options (on first call)
        - add a comment/note or change subject
 
@@ -64,20 +65,21 @@ available from MELPA.  Install these packages as well.
       #+begin_src emacs-lisp
       (redveu/verbose-issue)
       #+end_src
-   2. Cannot update Custom Fields currently
+   2. Add new issue using API.  This is supported in elmine
+   3. Cannot update Custom Fields currently
       - https://redmine.apidb.org/api_custom_fields.json
       #+begin_example
       PUT /issues/296.json
       {"issue":
-        {
-        "subject":"Updating custom fields of an issue",
-         ...
-         "custom_fields":
-          [
-            {"value":"1.0.2","id":1},
-            {"value":"Invalid","id":2}
-          ]
-        }
+      {
+      "subject":"Updating custom fields of an issue",
+      ...
+      "custom_fields":
+      [
+      {"value":"1.0.2","id":1},
+      {"value":"Invalid","id":2}
+      ]
+      }
      }
       #+end_example
 

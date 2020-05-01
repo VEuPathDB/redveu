@@ -1,4 +1,4 @@
-#+title: RedVEu (Redmine for VEuPath) Mode
+#+title: RedVEu (Redmine for VEuPath)
 #+author: John Brestelli
 
 * Getting started

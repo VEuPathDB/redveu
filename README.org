@@ -54,6 +54,7 @@ available from MELPA.  Install these packages as well.
        redveu/update-tracker
        redveu/update-priority
        redveu/update-subject
+       redveu/update-veupathdb-team
        redveu/add-comment
        #+end_src
        - uses tab complete
@@ -69,20 +70,4 @@ available from MELPA.  Install these packages as well.
    3. Check for "Choose" Tracker as this will cause problems with updates to status
       - You cannot set any status you like.  Each tracker has supported status options
       - Choose is especially bad may apply to others as well
-   4. update Custom Fields (especially VEuPathDB Team)
-      - https://redmine.apidb.org/api_custom_fields.json
-      #+begin_example
-      PUT /issues/296.json
-      {"issue":
-      {
-      "subject":"Updating custom fields of an issue",
-      ...
-      "custom_fields":
-      [
-      {"value":"1.0.2","id":1},
-      {"value":"Invalid","id":2}
-      ]
-      }
-     }
-      #+end_example
 

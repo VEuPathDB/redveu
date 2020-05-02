@@ -5,6 +5,8 @@
 (setq redveu/priorities (make-hash-table :test 'equal))
 (setq redveu/users (make-hash-table :size 100 :test 'equal))
 
+(setq redveu/veupathdb-team-property nil)
+
 (defun redveu/makeHash(objs hash)
   (when objs
     (setq o (car objs))
@@ -103,6 +105,39 @@
     )
   )
 
+;; only doing this for VEuPath Team currently...could add more as needed
+(defun redveu/set-custom-properties()
+  (setq customFields (elmine/api-get-all :custom_fields "/api_custom_fields.json"))
+  (while customFields
+    (setq field (car customFields))
+    (if (string= (elmine/get field :name) "VEuPathDB Team")
+	(setq redveu/veupathdb-team-property field)
+	)
+    (setq customFields (cdr customFields))
+    )
+  )
+
+
+
+(defun redveu/update-veupathdb-team (val &optional arg)
+  (interactive
+   (list
+    (completing-read "Choose one: " (if redveu/veupathdb-team-property
+					(elmine/get redveu/veupathdb-team-property :possible_values)
+				      (progn
+					(redveu/set-custom-properties)
+					(elmine/get redveu/veupathdb-team-property :possible_values)
+					)
+				      ) current-prefix-arg)))
+
+  (setq id (elmine/get redveu/veupathdb-team-property :id))
+  (if id
+      (redveu/update-issue-custom-property id val)
+    (error "Problem finding id for EuPathDB Team Custom Property")
+    )
+  )
+
+
 (defun redveu/update-subject (val &optional arg)
   (interactive (list (read-string "Enter New Subject: ") current-prefix-arg))
   (if val
@@ -131,6 +166,30 @@
 	(redveu/refresh-issue issueId)
 	)
     (error "Could not find a property of issue_id")
+    )
+  )
+
+
+
+
+
+(defun redveu/update-issue-custom-property (propId propValue)
+  (setq issueId (org-entry-get (point) "issue_id"))
+  (if issueId
+      (progn 
+	(setq issue '())
+	(setq issue (plist-put issue :id issueId))
+
+	(setq customField '())
+	(setq customField (plist-put customField :id propId))
+	(setq customField (plist-put customField :value propValue))
+	(setq customFields (vector customField))
+
+	(setq issue (plist-put issue :custom_fields customFields))
+	(elmine/update-issue issue)
+	(redveu/refresh-issue issueId)
+	)
+    (error "Could not find a custom custom property")
     )
   )
 

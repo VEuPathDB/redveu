@@ -1,4 +1,5 @@
 (require 'elmine)
+(require 's)
 
 (setq redveu/statuses (make-hash-table :test 'equal))
 (setq redveu/trackers (make-hash-table :test 'equal))

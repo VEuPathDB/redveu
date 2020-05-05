@@ -39,15 +39,11 @@ available from MELPA.  Install these packages as well.
       #+begin_src emacs-lisp
       redveu/get-project-issues query_id
       #+end_src
-   7. When cursor is on an issue, get all comments and attachments associated with issue 
-      #+begin_src emacs-lisp
-      redveu/verbose-issue
-      #+end_src
-   8. Link to create new issue for a project
-   9. Link to issue web page
-   10. Link to create subtask of an issue
-   11. Link to attachments
-   12. when cursor is on an issue, update issues using api (PUT)
+   7. Link to create new issue for a project
+   8. Link to issue web page
+   9. Link to create subtask of an issue
+   10. Link to attachments
+   11. when cursor is on an issue, update issues using api (PUT)
        #+begin_src emacs-lisp
        redveu/update-assigned-to
        redveu/update-status
@@ -62,12 +58,8 @@ available from MELPA.  Install these packages as well.
        - add a comment/note or change subject
 
 * TODOs
-   1. Journals/Comments and Attachments are not automatically included when viewing issues.  you must ask for them
-      #+begin_src emacs-lisp
-      (redveu/verbose-issue)
-      #+end_src
-   2. Add new issue using API.  This is supported in elmine
-   3. Check for "Choose" Tracker as this will cause problems with updates to status
+   1. Add new issue using API.  This is supported in elmine
+   2. Check for "Choose" Tracker as this will cause problems with updates to status
       - You cannot set any status you like.  Each tracker has supported status options
       - Choose is especially bad may apply to others as well
 

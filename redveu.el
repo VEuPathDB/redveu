@@ -368,6 +368,7 @@
   (org-set-property "issue_id" (format "%s" issueId))
   (org-set-property "priority" priority)
   (org-set-property "status" status)
+  (org-set-property "checkedForComments" "no")
   (org-set-property "tracker" tracker)
   (if assignedTo
       (org-set-property "assigned_to" assignedTo)
@@ -395,13 +396,31 @@
 
   (setq issueId (org-entry-get (point) "issue_id"))
   (if issueId
-      (progn 
-	(setq i (elmine/get-issue issueId :include "journals,attachments"))
-	(redveu/parse-journals-to-org (elmine/get i :journals))
-	(redveu/parse-attachments-to-org (elmine/get i :attachments))
-	)
+      (redveu/add-journals-and-attachments issueId)
     )
   )
+
+(defun redveu/add-journals-and-attachments(issueId)
+  (setq i (elmine/get-issue issueId :include "journals,attachments"))
+
+  (setq journals (elmine/get i :journals))
+  (setq attachments (elmine/get i :attachments))
+
+  (redveu/parse-journals-to-org journals)
+  (redveu/parse-attachments-to-org attachments)
+
+  (setq noteCount 0)
+  (while journals
+    (setq journal (car journals))
+    (if (/= 0 (length (elmine/get journal :notes)))
+	(setq noteCount (+ noteCount 1))
+      )
+    (setq journals (cdr journals))
+    )
+
+  (+ (length attachments) noteCount)
+  )
+
 
 (defun redveu/parse-attachments-to-org(attachments)
   (when attachments
@@ -413,7 +432,9 @@
 (defun redveu/parse-attachment-to-org(a)
   (org-insert-heading-after-current)
   (redveu/goto-level 4)
-  (insert "Attachment " (org-insert-link nil (elmine/get a :content_url) (elmine/get a :filename)) " by " (elmine/get (elmine/get j :author) :name) " on " (elmine/get j :created_on) "\n")
+  (insert "Attachment ")
+  (org-insert-link nil (elmine/get a :content_url) (elmine/get a :filename))
+  (insert " by " (elmine/get (elmine/get a :author) :name) " on " (elmine/get a :created_on) "\n")
   )
 
 (defun redveu/parse-journals-to-org(journals)
@@ -442,6 +463,30 @@
       (replace-regexp-in-string "*" " *" d)
     )
   )
+
+
+
+(defun redveu/org-cycle(arg)
+  (interactive "P")
+  (setq issueId (org-entry-get (point) "issue_id"))
+  (setq checkedForComments (org-entry-get (point) "checkedForComments"))
+  (if (and issueId (string= checkedForComments "no"))
+      (progn
+	(org-set-property "checkedForComments" "done")
+	(if (> (redveu/add-journals-and-attachments issueId) 0)
+	    (outline-up-heading 1)
+	  )
+	)
+    )
+  (org-cycle)
+  )
+
+(add-hook 'org-mode-hook
+       (lambda ()
+	 (local-set-key (kbd "<tab>") 'redveu/org-cycle)
+	 ))
+
+
 
 ;; (defun redveu/clear-subtree ()
 ;;   (interactive)

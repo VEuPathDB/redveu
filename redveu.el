@@ -214,12 +214,12 @@
   (insert projectName "\n" )
   
   (org-cycle)
-  (org-insert-link nil (concat elmine/host "/projects/" projectIdentifier) "Project")
-  (insert "\n")
+;;  (org-insert-link nil (concat elmine/host "/projects/" projectIdentifier) "Project")
+  (insert (concat "[[" (concat elmine/host "/projects/" projectIdentifier) "][Project]]\n"))
 
   (org-cycle)
-  (org-insert-link nil (concat elmine/host "/projects/" projectIdentifier "/issues/new") "New Issue")   
-  (insert "\n")
+;;  (org-insert-link nil (concat elmine/host "/projects/" projectIdentifier "/issues/new") "New Issue")   
+  (insert (concat "[[" (concat elmine/host "/projects/" projectIdentifier "/issues/new") "][New Issue]]\n"))
 
   (org-insert-property-drawer)
   (org-set-property "project_identifier" projectIdentifier)
@@ -343,15 +343,30 @@
   (setq tracker (elmine/get (elmine/get i :tracker) :name))
 
   (setq assignedTo (elmine/get (elmine/get i :assigned_to) :name))
+  (setq author (elmine/get (elmine/get i :author) :name))
+
   (setq fixedVersion (elmine/get (elmine/get i :fixed_version) :name))
   
   (org-insert-heading-after-current)
   (redveu/goto-level 3)
+
+  (setq assignedToAbbrev "Nobody")
+  (if assignedTo
+      (progn 
+	(setq assignedToList (split-string assignedTo))
+	(setq firstName (pop assignedToList))
+	(setq assignedToAbbrev (concat firstName (substring (car assignedToList) 0 1)))
+	)
+    )
+
+  (setq authorList (split-string author ))
+  (setq authorFirstName (pop authorList))
+  (setq authorAbbrev (concat authorFirstName (substring (car authorList) 0 1)))  
   
-  (insert (format "%-9s %-8s %-20s %-40s %-35s"
-		  priority
-		  tracker
-		  assignedTo
+  (insert (format "%-1s %-1s %-20s %-40s %-35s"
+		  (substring priority 0 1)
+		  (substring tracker 0 1)
+		  (concat authorAbbrev "->" assignedToAbbrev)
 		  (substring projectName 0 (min 35 (length projectName)))
 		  (elmine/get i :subject)
 		  )
@@ -359,12 +374,14 @@
 
   (insert "\n")
   (org-cycle)
-  (org-insert-link nil (concat elmine/host "/issues/" (number-to-string issueId)) "Issue")   
-  (insert "\n")
+  (insert (concat "[[" (concat elmine/host "/issues/" (number-to-string issueId)) "][Issue Page]]\n"))
+  
+  (org-cycle)
+  (insert (concat "[[" (concat elmine/host "/projects/" (number-to-string projectId) "/issues/new?subtask_for_id=" (number-to-string issueId)) "][Add Subtask]]\n"))
 
   (org-cycle)
-  (org-insert-link nil (concat elmine/host "/projects/" (number-to-string projectId) "/issues/new?subtask_for_id=" (number-to-string issueId)) "Add Subtask")  (insert "\n")
-
+  (insert (concat "[[" (concat elmine/host "/projects/" (number-to-string projectId) "/issues/new") "][New Issue (Same Project)]]\n"))
+  
   (org-insert-property-drawer)
   (org-set-property "issue_id" (format "%s" issueId))
   (org-set-property "priority" priority)
@@ -434,7 +451,8 @@
   (org-insert-heading-after-current)
   (redveu/goto-level 4)
   (insert "Attachment ")
-  (org-insert-link nil (elmine/get a :content_url) (elmine/get a :filename))
+;;  (org-insert-link nil (elmine/get a :content_url) (elmine/get a :filename))
+  (insert (concat "[[" (elmine/get a :content_url) "][" (elmine/get a :filename) "]]"))
   (insert " by " (elmine/get (elmine/get a :author) :name) " on " (elmine/get a :created_on) "\n")
   )
 

@@ -444,6 +444,14 @@
     )
   )
 
+
+(defsubst hash-table-keys (hash-table)
+  "Return a list of keys in HASH-TABLE."
+  (let ((keys '()))
+    (maphash (lambda (k _v) (push k keys)) hash-table)
+    keys))
+
+
 ;; (defun redveu/clear-subtree ()
 ;;   (interactive)
 ;;   (org-mark-subtree) ;; mark the current subtree

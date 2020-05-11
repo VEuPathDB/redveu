@@ -11,14 +11,29 @@
 (defun redveu/makeHash(objs hash)
   (when objs
     (setq o (car objs))
-    (setq name (if (elmine/get o :name)
-		   (elmine/get o :name)
-		   (concat (elmine/get o :firstname) " " (elmine/get o :lastname))
-		 ))
+    (setq name (elmine/get o :name))
     (puthash name (elmine/get o :id) hash)
     (redveu/makeHash(cdr objs) hash)
     )
   )
+
+
+(defun redveu/makeUsersHash(objs hash)
+  (when objs
+    (setq m (car objs))
+    (setq o (elmine/get m :user))
+    (if o
+	(progn 
+	  (setq name (elmine/get o :name))
+	  (puthash name (elmine/get o :id) hash)
+	  )
+      )
+    (redveu/makeUsersHash(cdr objs) hash)
+    )
+  )
+
+
+
 
 (defun redveu/get-projects (query_id &optional arg)
   "Get projects using optional query"
@@ -94,7 +109,8 @@
     (completing-read "Choose one: " (if (> (hash-table-count redveu/users)  0)
 					(hash-table-keys redveu/users)
 				      (progn
-					(redveu/makeHash (elmine/api-get-all :users "/users.json") redveu/users)
+					;; TODO: The project name here is hard coded (kjowxz).  Each project has a list of member/users.  Could look up theh users for each project in that way.  
+					(redveu/makeUsersHash (elmine/api-get-all :memberships "/projects/kjowxz/memberships.json" :limit 100) redveu/users)
 					(hash-table-keys redveu/users)
 					)
 				      ) current-prefix-arg)))

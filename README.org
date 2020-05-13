@@ -11,6 +11,10 @@ available from MELPA.  Install these packages as well.
 - [[https://github.com/magnars/s.el][s.el]] --- The long lost Emacs string manipulation library.
 
 
+Confrimed working on:
+- Ubuntu 18.04.4 with GNU Emacs 25.2.2 (x86_64-pc-linux-gnu, GTK+ Version 3.22.21) of 2017-09-22, modified by Debian
+- Mac OS Mojave 10.14.6 with Emacs 26.1 (9.0)
+
 ** Download  to a directory in `load-path'.
    #+begin_example
    git clone https://github.com/leoc/elmine.git

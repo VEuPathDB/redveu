@@ -377,10 +377,18 @@
 	)
     )
 
-  (setq authorList (split-string author ))
-  (setq authorFirstName (pop authorList))
-  (setq authorAbbrev (concat authorFirstName (substring (car authorList) 0 1)))  
-  
+  (setq authorAbbrev "Anonymous")
+  (if author
+      (progn
+	(setq authorList (split-string author ))
+	(setq authorFirstName (pop authorList))
+	(if authorList
+	    (setq authorAbbrev (concat authorFirstName (substring (car authorList) 0 1)))
+	  (setq authorAbbrev authorFirstName)
+	  )
+	)
+    )
+
   (insert (format "%-1s %-1s %-20s %-40s %-35s"
 		  (substring priority 0 1)
 		  (substring tracker 0 1)

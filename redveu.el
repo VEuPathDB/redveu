@@ -335,7 +335,7 @@
 (defun redveu/parse-custom-field-to-property(customField)
   (setq prop (elmine/get customField :name))
   (if (string= prop "VEuPathDB Team")
-      (org-set-property (elmine/get customField :name) (elmine/get customField :value))
+      (org-set-property "VEuPathDB_Team" (elmine/get customField :value))
     )
   )
 

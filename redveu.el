@@ -124,7 +124,7 @@
 
 ;; only doing this for VEuPath Team currently...could add more as needed
 (defun redveu/set-custom-properties()
-  (setq customFields (elmine/api-get-all :custom_fields "/api_custom_fields.json"))
+  (setq customFields (elmine/api-get-all :custom_fields "/custom_fields.json"))
   (while customFields
     (setq field (car customFields))
     (if (string= (elmine/get field :name) "VEuPathDB Team")
@@ -140,10 +140,12 @@
   (interactive
    (list
     (completing-read "Choose one: " (if redveu/veupathdb-team-property
-					(elmine/get redveu/veupathdb-team-property :possible_values)
+					(mapcar #'(lambda(x) (elmine/get x :value)) (elmine/get redveu/veupathdb-team-property :possible_values))
+					;;(elmine/get redveu/veupathdb-team-property :possible_values)
 				      (progn
 					(redveu/set-custom-properties)
-					(elmine/get redveu/veupathdb-team-property :possible_values)
+					(mapcar #'(lambda(x) (elmine/get x :value)) (elmine/get redveu/veupathdb-team-property :possible_values))
+					;;(elmine/get redveu/veupathdb-team-property :possible_values)
 					)
 				      ) current-prefix-arg)))
 
@@ -396,7 +398,7 @@
   (insert (concat "[[" (concat elmine/host "/projects/" (number-to-string projectId) "/issues/new?subtask_for_id=" (number-to-string issueId)) "][Add Subtask]]\n"))
 
   (org-cycle)
-  (insert (concat "[[" (concat elmine/host "/projects/" (number-to-string projectId) "/issues/new") "][New Issue (Same Project)]]\n"))
+  (insert (concat "[[" (concat elmine/host "/projects/" (number-to-string projectId) "/issues/new") "][New Issue (" projectName ")]]\n"))
   
   (org-insert-property-drawer)
   (org-set-property "issue_id" (format "%s" issueId))

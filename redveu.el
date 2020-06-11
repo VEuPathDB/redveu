@@ -7,6 +7,7 @@
 (setq redveu/users (make-hash-table :size 100 :test 'equal))
 
 (setq redveu/veupathdb-team-property nil)
+(setq redveu/manager-concern-property nil)
 
 (defun redveu/makeHash(objs hash)
   (when objs
@@ -129,7 +130,11 @@
     (setq field (car customFields))
     (if (string= (elmine/get field :name) "VEuPathDB Team")
 	(setq redveu/veupathdb-team-property field)
-	)
+      )
+
+    (if (string= (elmine/get field :name) "Manager concern")
+	(setq redveu/manager-concern-property field)
+      )
     (setq customFields (cdr customFields))
     )
   )
@@ -155,6 +160,27 @@
     (error "Problem finding id for EuPathDB Team Custom Property")
     )
   )
+
+
+(defun redveu/update-manager-concern (val &optional arg)
+  (interactive
+   (list
+    (completing-read "Choose one: " (if redveu/manager-concern-property
+					(mapcar #'(lambda(x) (elmine/get x :value)) (elmine/get redveu/manager-concern-property :possible_values))
+				      (progn
+					(redveu/set-custom-properties)
+					(mapcar #'(lambda(x) (elmine/get x :value)) (elmine/get redveu/manager-concern-property :possible_values))
+					)
+				      ) current-prefix-arg)))
+
+  (setq id (elmine/get redveu/manager-concern-property :id))
+  (if id
+      (redveu/update-issue-custom-property id val)
+    (error "Problem finding id for EuPathDB Team Custom Property")
+    )
+  )
+
+
 
 
 (defun redveu/update-subject (val &optional arg)
@@ -187,10 +213,6 @@
     (error "Could not find a property of issue_id")
     )
   )
-
-
-
-
 
 (defun redveu/update-issue-custom-property (propId propValue)
   (setq issueId (org-entry-get (point) "issue_id"))

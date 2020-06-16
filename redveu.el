@@ -432,7 +432,7 @@
 (defun redveu/group-issues (prop arg)
   (interactive
    (list
-    (completing-read "Choose Property: " '("priority" "status" "tracker" "assigned_to" "author" "project_name" "PIP" "Manager_concern" "version")
+    (completing-read "Choose Property: " '("priority" "status" "tracker" "assigned_to" "author" "project_name" "PIP" "Manager_concern" "version" "VEuPathDB_Team")
 				      ) current-prefix-arg))
 
   (setq queryId (org-entry-get (point) "query_id"))

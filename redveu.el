@@ -6,8 +6,12 @@
 (setq redveu/priorities (make-hash-table :test 'equal))
 (setq redveu/users (make-hash-table :size 100 :test 'equal))
 
+(setq redveu/queries (make-hash-table :test 'equal))
+
 (setq redveu/veupathdb-team-property nil)
+
 (setq redveu/manager-concern-property nil)
+(setq redveu/pip-property nil)
 
 (defun redveu/makeHash(objs hash)
   (when objs
@@ -135,6 +139,11 @@
     (if (string= (elmine/get field :name) "Manager concern")
 	(setq redveu/manager-concern-property field)
       )
+
+    (if (string= (elmine/get field :name) "PIP")
+	(setq redveu/pip-property field)
+      )
+    
     (setq customFields (cdr customFields))
     )
   )
@@ -174,6 +183,25 @@
 				      ) current-prefix-arg)))
 
   (setq id (elmine/get redveu/manager-concern-property :id))
+  (if id
+      (redveu/update-issue-custom-property id val)
+    (error "Problem finding id for EuPathDB Team Custom Property")
+    )
+  )
+
+
+(defun redveu/update-pip (val &optional arg)
+  (interactive
+   (list
+    (completing-read "Choose one: " (if redveu/pip-property
+					(mapcar #'(lambda(x) (elmine/get x :value)) (elmine/get redveu/pip-property :possible_values))
+				      (progn
+					(redveu/set-custom-properties)
+					(mapcar #'(lambda(x) (elmine/get x :value)) (elmine/get redveu/pip-property :possible_values))
+					)
+				      ) current-prefix-arg)))
+
+  (setq id (elmine/get redveu/pip-property :id))
   (if id
       (redveu/update-issue-custom-property id val)
     (error "Problem finding id for EuPathDB Team Custom Property")
@@ -301,6 +329,9 @@
   (org-insert-property-drawer)
   (org-set-property "query_id" (format "%s" q))
   (org-set-property "query_type" type)
+  (if (string= type "ISSUE")
+      (org-set-property "COLUMNS" "%priority %tracker %author_assigned %VEuPathDB_Team %40subject %30project_name %version")
+      )
   )
 
 
@@ -309,7 +340,7 @@
 ;;   (mapcar #'(lambda(x) (elmine/get (elmine/get x :project) :name))  issues)
 ;;)
 
-(defun redveu/get-issues (query_id &optional arg)
+(defun redveu/get-issues-by-id (query_id &optional arg)
   "Get issues using query"
   (interactive (list (read-string "Query Id (Required): ") current-prefix-arg))
    (if query_id 
@@ -320,6 +351,30 @@
 	      )
      )
    (org-set-startup-visibility)
+  )
+
+
+(defun redveu/get-issues (val &optional arg)
+  (interactive
+   (list
+    (completing-read "Choose one: " (if (> (hash-table-count redveu/queries)  0)
+					(hash-table-keys redveu/queries)
+				      (progn
+					(redveu/makeHash (elmine/api-get-all :easy_queries "/queries.json") redveu/queries)
+					(hash-table-keys redveu/queries)
+					)
+				      ) current-prefix-arg)))
+
+  (setq query_id (gethash val redveu/queries))
+  (if query_id
+      (progn (redveu/init query_id "ISSUE")
+	     (redveu/parse-issues-to-org 
+	      (elmine/get-issues :query_id query_id)
+	      )
+	     )
+    (error "Not a valid selection")
+    )
+  (org-set-startup-visibility)
   )
 
 (defun redveu/get-project-issues (query_id &optional arg)
@@ -359,7 +414,93 @@
   (if (string= prop "VEuPathDB Team")
       (org-set-property "VEuPathDB_Team" (elmine/get customField :value))
     )
+
+  (if (string= prop "PIP")
+      (org-set-property "PIP" (elmine/get customField :value))
+    )
+
+  (if (string= prop "Manager concern")
+      (org-set-property "Manager_concern" (elmine/get customField :value))
+    )
+
+
   )
+
+
+
+
+(defun redveu/group-issues (prop arg)
+  (interactive
+   (list
+    (completing-read "Choose Property: " '("priority" "status" "tracker" "assigned_to" "author" "project_name" "PIP" "Manager_concern" "version")
+				      ) current-prefix-arg))
+
+  (setq queryId (org-entry-get (point) "query_id"))
+  (if queryId 
+      (progn (org-sort-entries nil ?r nil nil prop)
+	     (outline-next-visible-heading 1)
+	     (setq prevPropVal nil)
+	     (setq nextIssueId (org-entry-get (point) "issue_id"))
+	     (while nextIssueId
+	       (setq propValue (org-entry-get (point) prop))
+	       (unless propValue (setq propValue "None"))
+	       (setq issueId (org-entry-get (point) "issue_id"))
+	       (unless (string= prevPropVal propValue)
+		   (progn
+		     (org-insert-heading-after-current)
+		     (redveu/goto-level 3)
+		     (insert propValue)
+		     (org-move-subtree-up)
+		     (redveu/goto-level 2)
+		     (setq prevPropVal propValue)
+		     (outline-next-visible-heading 1)
+		     )
+		   )
+	       (ignore-errors
+		 (outline-forward-same-level 1)
+		 )
+	       (setq nextIssueId (org-entry-get (point) "issue_id"))
+	       (if (string=  nextIssueId issueId)
+		   (setq nextIssueId nil)		   
+		   )
+		   
+	       )
+	     )
+    )
+    (org-set-startup-visibility)
+  )
+
+
+
+(defun redveu/refresh-query(arg)
+  "refresh previously run query"
+  (interactive "P")
+  (setq queryId (org-entry-get (point) "query_id"))
+  (setq queryType (org-entry-get (point) "query_type"))
+
+
+  (org-cut-subtree)
+  (previous-line)
+
+  (redveu/init queryId queryType)
+  
+  (if (string= queryType "ISSUE")
+      (progn (redveu/parse-issues-to-org 
+	      (elmine/get-issues :query_id queryId)
+	      )
+	     )
+      )
+
+  (if (string= queryType "PROJECT")
+      (progn (redveu/parse-projects-to-org 
+	      (elmine/get-projects :query_id queryId)
+	      )
+	     )
+      )
+  (org-set-startup-visibility)
+  )
+
+
 
 (defun redveu/refresh-issue(issueId)
   (org-cut-subtree)
@@ -411,14 +552,14 @@
 	)
     )
 
-  (insert (format "%-1s %-1s %-20s %-40s %-35s"
-		  (substring priority 0 1)
-		  (substring tracker 0 1)
-		  (concat authorAbbrev "->" assignedToAbbrev)
-		  (substring projectName 0 (min 35 (length projectName)))
-		  (elmine/get i :subject)
-		  )
-	  )
+   (insert (format "%-1s %-1s %-20s %-23s %-60s"
+   		  (substring priority 0 1)
+   		  (substring tracker 0 1)
+   		  (concat authorAbbrev "->" assignedToAbbrev)
+		  (substring projectName 0 (min 20 (length projectName)))
+   		  (elmine/get i :subject)
+   		  )
+   	  )
 
   (insert "\n")
   (org-cycle)
@@ -432,8 +573,10 @@
   
   (org-insert-property-drawer)
   (org-set-property "issue_id" (format "%s" issueId))
+  (org-set-property "author_assigned" (concat authorAbbrev "->" assignedToAbbrev))
   (org-set-property "priority" priority)
   (org-set-property "status" status)
+  (org-set-property "subject" (elmine/get i :subject))
   (org-set-property "checkedForComments" "no")
   (org-set-property "tracker" tracker)
   (if assignedTo
@@ -539,10 +682,15 @@
 
 (defun redveu/org-cycle(arg)
   (interactive "P")
+
   (setq issueId (org-entry-get (point) "issue_id"))
   (setq checkedForComments (org-entry-get (point) "checkedForComments"))
   (if (and issueId (string= checkedForComments "no"))
       (progn
+	;; Exit out of column mode if we are in it
+	(if (fboundp 'org-columns-quit)
+	    (org-columns-quit) 
+	  )
 	(org-set-property "checkedForComments" "done")
 	(if (> (redveu/add-journals-and-attachments issueId) 0)
 	    (outline-up-heading 1)

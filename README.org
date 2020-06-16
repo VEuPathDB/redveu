@@ -41,7 +41,8 @@ Confrimed working on:
    3. Changes you make to the text in the org file will not be reflected in redmine.  To update tasks, you must run update commands
    4. You can search for issues using a pre defined query
       #+begin_src emacs-lisp
-      redveu/get-issues query_id
+      redveu/get-issues query_name
+      redveu/get-issues-by-id query_id
       #+end_src
    5. Search for projects using a pre defined query
       #+begin_src emacs-lisp
@@ -59,6 +60,7 @@ Confrimed working on:
        #+begin_src emacs-lisp
        redveu/update-assigned-to
        redveu/update-status
+       redveu/update-version
        redveu/update-tracker
        redveu/update-priority
        redveu/update-subject
@@ -68,6 +70,11 @@ Confrimed working on:
        - uses tab complete
        - fetches and caches available options (on first call)
        - add a comment/note or change subject
+   12. when cursor is on a search, group the issues by property
+       #+begin_src emacs-lisp
+       redveu/group-issues
+       redveu/refresh-query
+       #+end_src
 
 * TODOs
    1. Add new issue using API.  This is supported in elmine

@@ -7,6 +7,7 @@
 (setq redveu/users (make-hash-table :size 100 :test 'equal))
 
 (setq redveu/queries (make-hash-table :test 'equal))
+(setq redveu/versions (make-hash-table :test 'equal))
 
 (setq redveu/veupathdb-team-property nil)
 
@@ -52,6 +53,29 @@
      )
    (org-set-startup-visibility)
 )
+
+
+
+(defun redveu/update-version (val &optional arg)
+  (interactive
+   (list
+    (completing-read "Choose one: " (if (> (hash-table-count redveu/versions)  0)
+					(hash-table-keys redveu/versions)
+				      (progn
+					;; TODO: The project name here is hard coded (kjowxz).  
+					(redveu/makeHash (elmine/api-get-all :versions "/projects/kjowxz/versions.json" :limit 100) redveu/versions)
+					(hash-table-keys redveu/versions)
+					)
+				      ) current-prefix-arg)))
+
+  (setq id (gethash val redveu/versions))
+  (if id
+      (redveu/update-issue-property :fixed_version_id id)
+    (error "Not a valid selection")
+    )
+  )
+
+
 
 
 (defun redveu/update-tracker (val &optional arg)

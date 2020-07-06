@@ -252,6 +252,188 @@
   )
 
 
+
+(defun redveu/create-issue (priority tracker assignedTo veupathTeam version subject description &optional arg)
+  (interactive
+   (list
+    (completing-read "Priority: " (if (> (hash-table-count redveu/priorities)  0)
+				      (hash-table-keys redveu/priorities)
+				    (progn
+				      (redveu/makeHash (elmine/get-issue-priorities) redveu/priorities)
+				      (hash-table-keys redveu/priorities)
+				      )
+				    )
+		     nil nil "Normal"
+		     )
+    (completing-read "Tracker: " (if (> (hash-table-count redveu/trackers)  0)
+					(hash-table-keys redveu/trackers)
+				      (progn
+					(redveu/makeHash (elmine/get-trackers) redveu/trackers)
+					(hash-table-keys redveu/trackers)
+					)
+				      )
+		     nil nil "Task"
+		     )
+
+    (completing-read "Assigned To: " (if (> (hash-table-count redveu/users)  0)
+					(cons "None" (hash-table-keys redveu/users))
+				      (progn
+					;; TODO: The project name here is hard coded (kjowxz).  Each project has a list of member/users.  Could look up theh users for each project in that way.  
+					(redveu/makeUsersHash (elmine/api-get-all :memberships "/projects/kjowxz/memberships.json" :limit 100) redveu/users)
+					(cons "None" (hash-table-keys redveu/users))
+					)
+				      )
+		     nil nil "None"
+		     )
+
+    (completing-read "VEuPath Team: " (if redveu/veupathdb-team-property
+					(mapcar #'(lambda(x) (elmine/get x :value)) (elmine/get redveu/veupathdb-team-property :possible_values))
+				      (progn
+					(redveu/set-custom-properties)
+					(mapcar #'(lambda(x) (elmine/get x :value)) (elmine/get redveu/veupathdb-team-property :possible_values))
+					)
+				      )
+		     nil nil "Data Development"
+		     )
+    (completing-read "Milestone: " (if (> (hash-table-count redveu/versions)  0)
+					(cons "None" (hash-table-keys redveu/versions))
+				      (progn
+					;; TODO: The project name here is hard coded (kjowxz).  
+					(redveu/makeHash (elmine/api-get-all :versions "/projects/kjowxz/versions.json" :limit 100) redveu/versions)
+					(cons "None" (hash-table-keys redveu/versions))
+					)
+				      )
+		     nil nil "None"
+		     )
+    (read-string "Subject: ")
+    (read-string "Description: ")
+    current-prefix-arg
+    )
+   )
+
+  (setq projectId (org-entry-get (point) "project_id"))
+  (if projectId
+      (progn 
+	(setq issue '())
+	(setq issue (plist-put issue :project_id projectId))
+	(setq issue (plist-put issue :subject subject))
+	(setq issue (plist-put issue :description description))
+	(setq issue (plist-put issue :tracker_id (gethash tracker redveu/trackers)))
+
+	(if (string= version "None")
+	    nil
+	    (setq issue (plist-put issue :fixed_version_id (gethash version redveu/versions)))
+	  )
+	
+	(if (string= assignedTo "None")
+	    nil
+	    (setq issue (plist-put issue :assigned_to_id (gethash assignedTo redveu/users)))
+	  )
+	(setq issue (plist-put issue :priority_id (gethash priority redveu/priorities)))
+ 	(setq customField '())
+	(setq customField (plist-put customField :id (elmine/get redveu/veupathdb-team-property :id)))
+	(setq customField (plist-put customField :value veupathTeam))
+	(setq customFields (vector customField))
+	(setq issue (plist-put issue :custom_fields customFields))
+	(elmine/create-issue issue)
+	)
+    (error "Could not find a property of project_id")
+    )
+  )
+
+
+
+(defun redveu/create-subtask (priority tracker assignedTo veupathTeam version subject description &optional arg)
+  (interactive
+   (list
+    (completing-read "Priority: " (if (> (hash-table-count redveu/priorities)  0)
+				      (hash-table-keys redveu/priorities)
+				    (progn
+				      (redveu/makeHash (elmine/get-issue-priorities) redveu/priorities)
+				      (hash-table-keys redveu/priorities)
+				      )
+				    )
+		     nil nil "Normal"
+		     )
+    (completing-read "Tracker: " (if (> (hash-table-count redveu/trackers)  0)
+					(hash-table-keys redveu/trackers)
+				      (progn
+					(redveu/makeHash (elmine/get-trackers) redveu/trackers)
+					(hash-table-keys redveu/trackers)
+					)
+				      )
+		     nil nil "Task"
+		     )
+
+    (completing-read "Assigned To: " (if (> (hash-table-count redveu/users)  0)
+					(cons "None" (hash-table-keys redveu/users))
+				      (progn
+					;; TODO: The project name here is hard coded (kjowxz).  Each project has a list of member/users.  Could look up theh users for each project in that way.  
+					(redveu/makeUsersHash (elmine/api-get-all :memberships "/projects/kjowxz/memberships.json" :limit 100) redveu/users)
+					(cons "None" (hash-table-keys redveu/users))
+					)
+				      )
+		     nil nil "None"
+		     )
+
+    (completing-read "VEuPath Team: " (if redveu/veupathdb-team-property
+					(mapcar #'(lambda(x) (elmine/get x :value)) (elmine/get redveu/veupathdb-team-property :possible_values))
+				      (progn
+					(redveu/set-custom-properties)
+					(mapcar #'(lambda(x) (elmine/get x :value)) (elmine/get redveu/veupathdb-team-property :possible_values))
+					)
+				      )
+		     nil nil "Data Development"
+		     )
+    (completing-read "Milestone: " (if (> (hash-table-count redveu/versions)  0)
+					(cons "None" (hash-table-keys redveu/versions))
+				      (progn
+					;; TODO: The project name here is hard coded (kjowxz).  
+					(redveu/makeHash (elmine/api-get-all :versions "/projects/kjowxz/versions.json" :limit 100) redveu/versions)
+					(cons "None" (hash-table-keys redveu/versions))
+					)
+				      )
+		     nil nil "None"
+		     )
+    (read-string "Subject: ")
+    (read-string "Description: ")
+    current-prefix-arg
+    )
+   )
+
+  (setq projectId (org-entry-get (point) "project_id"))
+  (setq issueId (org-entry-get (point) "issue_id"))  
+  (if projectId
+      (progn 
+	(setq issue '())
+	(setq issue (plist-put issue :project_id projectId))
+	(setq issue (plist-put issue :parent_issue_id issueId))
+	(setq issue (plist-put issue :subject subject))
+	(setq issue (plist-put issue :description description))
+	(setq issue (plist-put issue :tracker_id (gethash tracker redveu/trackers)))
+
+	(if (string= version "None")
+	    nil
+	    (setq issue (plist-put issue :fixed_version_id (gethash version redveu/versions)))
+	  )
+	
+	(if (string= assignedTo "None")
+	    nil
+	    (setq issue (plist-put issue :assigned_to_id (gethash assignedTo redveu/users)))
+	  )
+	(setq issue (plist-put issue :priority_id (gethash priority redveu/priorities)))
+ 	(setq customField '())
+	(setq customField (plist-put customField :id (elmine/get redveu/veupathdb-team-property :id)))
+	(setq customField (plist-put customField :value veupathTeam))
+	(setq customFields (vector customField))
+	(setq issue (plist-put issue :custom_fields customFields))
+	(elmine/create-issue issue)
+	)
+    (error "Could not find a property of project_id")
+    )
+  )
+
+
 (defun redveu/update-issue-property (element propertyId)
   (setq issueId (org-entry-get (point) "issue_id"))
   (if issueId
@@ -596,23 +778,23 @@
   (insert (concat "[[" (concat elmine/host "/projects/" (number-to-string projectId) "/issues/new") "][New Issue (" projectName ")]]\n"))
   
   (org-insert-property-drawer)
-  (org-set-property "issue_id" (format "%s" issueId))
-  (org-set-property "author_assigned" (concat authorAbbrev "->" assignedToAbbrev))
-  (org-set-property "priority" priority)
   (org-set-property "status" status)
-  (org-set-property "subject" (elmine/get i :subject))
-  (org-set-property "checkedForComments" "no")
+  (org-set-property "priority" priority)
   (org-set-property "tracker" tracker)
+  (org-set-property "author" (elmine/get (elmine/get i :author) :name))
   (if assignedTo
       (org-set-property "assigned_to" assignedTo)
     )
-  (org-set-property "author" (elmine/get (elmine/get i :author) :name))
+  (org-set-property "author_assigned" (concat authorAbbrev "->" assignedToAbbrev))
+  (org-set-property "project_name" projectName)
+  (org-set-property "subject" (elmine/get i :subject))
   (if fixedVersion
       (org-set-property "version" fixedVersion)
     )
-  (org-set-property "project_name" projectName)
-
   (redveu/parse-custom-fields-to-property (elmine/get i :custom_fields))
+  (org-set-property "issue_id" (format "%s" issueId))
+  (org-set-property "project_id" (format "%s" projectId))
+  (org-set-property "checkedForComments" "no")
   
   (org-insert-heading-after-current)
   (redveu/goto-level 4)

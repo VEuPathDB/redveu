@@ -75,9 +75,17 @@ Confrimed working on:
        redveu/group-issues
        redveu/refresh-query
        #+end_src
+   13. when cursor is on issue or project, create a new issue in the project (or issue's project)
+       #+begin_src emacs-lisp
+       redveu/create-issue
+       #+end_src
+   14. when cursor is on issue, create a new subtask for the issue
+       #+begin_src emacs-lisp
+       redveu/create-subtask
+       #+end_src
 
 * TODOs
-   1. Add new issue using API.  This is supported in elmine
+   1. Need to set due_date to null when changing the version.
    2. Check for "Choose" Tracker as this will cause problems with updates to status
       - You cannot set any status you like.  Each tracker has supported status options
       - Choose is especially bad may apply to others as well

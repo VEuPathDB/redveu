@@ -876,7 +876,12 @@
 
 (defun redveu/clean-description(d)
   (if d
-      (replace-regexp-in-string "*" " *" d)
+      (replace-regexp-in-string "*" " *"
+				(with-temp-buffer
+				  (insert d)
+				  (shr-render-region (point-min) (point-max))
+				  (buffer-substring-no-properties (point-min) (point-max)))
+				)
     )
   )
 

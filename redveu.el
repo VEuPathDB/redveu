@@ -536,7 +536,7 @@
   (org-set-property "query_id" (format "%s" q))
   (org-set-property "query_type" type)
   (if (string= type "ISSUE")
-      (org-set-property "COLUMNS" "%priority %tracker %author_assigned %VEuPathDB_Team %40subject %30project_name %version")
+      (org-set-property "COLUMNS" "%priorityZ %tracker %author_assigned %VEuPathDB_Team %40subject %30project_name %version")
       )
   )
 
@@ -617,22 +617,26 @@
 
 (defun redveu/parse-custom-field-to-property(customField)
   (setq prop (elmine/get customField :name))
+
+  (if (typep (elmine/get customField :value) 'string) 
+      (setq value (elmine/get customField :value ))
+    )
+  (if (string= value "")
+      (setq value "NA")
+    )
+
   (if (string= prop "VEuPathDB Team")
-      (org-set-property "VEuPathDB_Team" (elmine/get customField :value))
+      (org-set-property "VEuPathDB_Team" value)
     )
 
   (if (string= prop "PIP")
-      (org-set-property "PIP" (elmine/get customField :value))
+      (org-set-property "PIP" value)
     )
 
-  (if (string= prop "Manager concern")
-      (org-set-property "Manager_concern" (elmine/get customField :value))
+  (if  (string= prop "Manager concern")
+      (org-set-property "Manager_concern" value)
     )
-
-
   )
-
-
 
 
 (defun redveu/group-issues (prop arg)
@@ -732,38 +736,46 @@
   (setq assignedTo (elmine/get (elmine/get i :assigned_to) :name))
   (setq author (elmine/get (elmine/get i :author) :name))
 
+  (setq category (elmine/get (elmine/get i :category) :name))
+
   (setq fixedVersion (elmine/get (elmine/get i :fixed_version) :name))
   
   (org-insert-heading-after-current)
   (redveu/goto-level 3)
 
-  (setq assignedToAbbrev "Nobody")
+  (setq assignedToAbbrev "")
   (if assignedTo
       (progn 
 	(setq assignedToList (split-string assignedTo))
 	(setq firstName (pop assignedToList))
-	(setq assignedToAbbrev (concat firstName (substring (car assignedToList) 0 1)))
+	(setq assignedToAbbrev (concat (substring firstName 0 1) (substring (car assignedToList) 0 1)))
 	)
     )
 
-  (setq authorAbbrev "Anonymous")
+  (setq authorAbbrev "NA")
   (if author
       (progn
 	(setq authorList (split-string author ))
 	(setq authorFirstName (pop authorList))
 	(if authorList
-	    (setq authorAbbrev (concat authorFirstName (substring (car authorList) 0 1)))
+	    (setq authorAbbrev (concat (substring authorFirstName 0 1) (substring (car authorList) 0 1)))
 	  (setq authorAbbrev authorFirstName)
 	  )
 	)
     )
 
-   (insert (format "%-1s %-1s %-20s %-23s %-60s"
+  (setq displayCategory "None")
+  (if category
+      (setq displayCategory category)
+    )
+
+  
+   (insert (format "%-1s %-1s %-6s %-60s"
    		  (substring priority 0 1)
    		  (substring tracker 0 1)
    		  (concat authorAbbrev "->" assignedToAbbrev)
-		  (substring projectName 0 (min 20 (length projectName)))
-   		  (elmine/get i :subject)
+;;		  (substring projectName 0 (min 20 (length projectName)))
+   		  (concat (elmine/get i :subject) " /" (substring projectName 0 (min 20 (length projectName))) "/")
    		  )
    	  )
 
@@ -779,9 +791,9 @@
   
   (org-insert-property-drawer)
   (org-set-property "status" status)
-  (org-set-property "priority" priority)
+  (org-set-property "priorityZ" priority)
   (org-set-property "tracker" tracker)
-  (org-set-property "author" (elmine/get (elmine/get i :author) :name))
+  (org-set-property "author" author)
   (if assignedTo
       (org-set-property "assigned_to" assignedTo)
     )

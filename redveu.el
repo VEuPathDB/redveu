@@ -1,6 +1,8 @@
 (require 'elmine)
 (require 's)
 
+(setq redveu/identity "IDENTITY");
+
 (setq redveu/statuses (make-hash-table :test 'equal))
 (setq redveu/trackers (make-hash-table :test 'equal))
 (setq redveu/priorities (make-hash-table :test 'equal))
@@ -504,7 +506,7 @@
       (progn
 	(org-insert-heading-after-current)
 	(redveu/goto-level 3)
-	(insert "Description" "\n")
+	(insert "COMMENT Description" "\n")
 	(insert "#+BEGIN_DESCRIPTION" "\n")
 	(insert (redveu/clean-description projectDescription) "\n")
 	(insert "#+END_DESCRIPTION" "\n")
@@ -744,13 +746,22 @@
   (redveu/goto-level 3)
 
   (setq assignedToAbbrev "")
+  (setq assignedToAbbrev2 "Nobody")
+  (setq todoTag "THEM")
   (if assignedTo
       (progn 
 	(setq assignedToList (split-string assignedTo))
 	(setq firstName (pop assignedToList))
 	(setq assignedToAbbrev (concat (substring firstName 0 1) (substring (car assignedToList) 0 1)))
+	(setq assignedToAbbrev2 (concat firstName (substring (car assignedToList) 0 1)))
+	(if (string= redveu/identity assignedTo)
+	    (setq todoTag "TODO")
+	  )
 	)
     )
+
+
+
 
   (setq authorAbbrev "NA")
   (if author
@@ -764,22 +775,25 @@
 	)
     )
 
+  (setq subject (elmine/get i :subject))
+  
   (setq displayCategory "None")
   (if category
       (setq displayCategory category)
     )
 
   
-   (insert (format "%-1s %-1s %-6s %-60s"
-   		  (substring priority 0 1)
-   		  (substring tracker 0 1)
-   		  (concat authorAbbrev "->" assignedToAbbrev)
+  (insert
+   (format "%-80s %-26s %-10s"
+;;   		  (concat authorAbbrev "->" assignedToAbbrev)
 ;;		  (substring projectName 0 (min 20 (length projectName)))
-   		  (concat (elmine/get i :subject) " /" (substring projectName 0 (min 20 (length projectName))) "/")
+	   (concat todoTag " " (substring subject 0 (min 70 (length subject))) "..." )
+	   (concat " /" (substring projectName 0 (min 20 (length projectName))) ".../")
+           (concat  ":" assignedToAbbrev2 ":")
    		  )
    	  )
 
-  (insert "\n")
+  (insert "\n\n")
   (org-cycle)
   (insert (concat "[[" (concat elmine/host "/issues/" (number-to-string issueId)) "][Issue Page]]\n"))
   
@@ -790,6 +804,9 @@
   (insert (concat "[[" (concat elmine/host "/projects/" (number-to-string projectId) "/issues/new") "][New Issue (" projectName ")]]\n"))
   
   (org-insert-property-drawer)
+
+  (org-set-property "issue_id" (format "%s" issueId))
+  (org-set-property "subject" (concat "*" subject "*"))
   (org-set-property "status" status)
   (org-set-property "priorityZ" priority)
   (org-set-property "tracker" tracker)
@@ -797,20 +814,20 @@
   (if assignedTo
       (org-set-property "assigned_to" assignedTo)
     )
-  (org-set-property "author_assigned" (concat authorAbbrev "->" assignedToAbbrev))
+;;  (org-set-property "author_assigned" (concat authorAbbrev "->" assignedToAbbrev))
+  (org-set-property "project_id" (format "%s" projectId))
   (org-set-property "project_name" projectName)
-  (org-set-property "subject" (elmine/get i :subject))
+
   (if fixedVersion
       (org-set-property "version" fixedVersion)
     )
   (redveu/parse-custom-fields-to-property (elmine/get i :custom_fields))
-  (org-set-property "issue_id" (format "%s" issueId))
-  (org-set-property "project_id" (format "%s" projectId))
+
   (org-set-property "checkedForComments" "no")
   
   (org-insert-heading-after-current)
   (redveu/goto-level 4)
-  (insert "Description" "\n")
+  (insert "COMMENT Description" "\n")
   (insert "#+BEGIN_DESCRIPTION" "\n")
   (insert (redveu/clean-description (elmine/get i :description)) "\n")
   (insert "#+END_DESCRIPTION" "\n")
@@ -877,7 +894,7 @@
       (progn
 	(org-insert-heading-after-current)
 	(redveu/goto-level 4)
-	(insert "Comment by " (elmine/get (elmine/get j :user) :name) " on " (elmine/get j :created_on) "\n")
+	(insert "COMMENT " (elmine/get (elmine/get j :user) :name) " on " (elmine/get j :created_on) "\n")
 	(insert "#+BEGIN_COMMENT" "\n")
 	(insert (redveu/clean-description (elmine/get j :notes)) "\n")
 	(insert "#+END_COMMENT" "\n")

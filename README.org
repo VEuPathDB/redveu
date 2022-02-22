@@ -11,28 +11,35 @@ available from MELPA.  Install these packages as well.
 - [[https://github.com/magnars/s.el][s.el]] --- The long lost Emacs string manipulation library.
 
 
-Confrimed working on:
-- Ubuntu 18.04.4 with GNU Emacs 25.2.2 (x86_64-pc-linux-gnu, GTK+ Version 3.22.21) of 2017-09-22, modified by Debian
-- Mac OS Mojave 10.14.6 with Emacs 26.1 (9.0)
+Confirmed working on:
+- Ubuntu 18.04.4 with GNU Emacs 27.1 with Doom 21.12 alpha
 
-** Download  to a directory in `load-path'.
-   #+begin_example
-   git clone https://github.com/leoc/elmine.git
-   git clone https://github.com/magnars/s.el
-   git clone https://github.com/VEuPathDB/redveu.git
-   #+end_example
+** Installation
+Add dependencies in ~/.doom.d/packages
 
-** Edit your ~/.emacs
+#+begin_example
+(package! elmine)
+(package! s)
+ #+end_example
+
+Git clone
+#+begin_example
+   git clone https://github.com/VEuPathDB/redveu.git ~/.doom.d
+ #+end_example
+
+A
+
+
+** Edit your ~/.doom.d/config.el
 
 #+begin_src emacs-lisp
   ;; Change these as appropriate
-  (add-to-list 'load-path "~/redmine/elmine")
-  (add-to-list 'load-path "~/redmine/s.el")
-  (add-to-list 'load-path "~/redmine/redveu")
+(add-to-list 'load-path "~/.doom.d/redveu")
+(load "redveu")
 
-  (load "redveu")
-  (setq elmine/host "https://redmine.apidb.org")
-  (setq elmine/api-key "YOUR_API_KEY")
+(setq redveu/identity "John Doe");
+(setq elmine/host "https://redmine.apidb.org")
+(setq elmine/api-key "YOUR_API_KEY")
 #+end_src
 
 ** Basics

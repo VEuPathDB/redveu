@@ -483,7 +483,7 @@
   (setq projectName (elmine/get p :name))
   (setq projectDescription (elmine/get p :description))
 
-  (org-insert-heading-after-current)
+  (org-insert-heading)
 
   (redveu/goto-level 2)
 
@@ -504,7 +504,7 @@
   
   (if projectDescription
       (progn
-	(org-insert-heading-after-current)
+	(org-insert-heading)
 	(redveu/goto-level 3)
 	(insert "COMMENT Description" "\n")
 	(insert "#+BEGIN_DESCRIPTION" "\n")
@@ -620,7 +620,8 @@
 (defun redveu/parse-custom-field-to-property(customField)
   (setq prop (elmine/get customField :name))
 
-  (if (typep (elmine/get customField :value) 'string) 
+  ;;(setq value "NA")
+  (if (char-or-string-p (elmine/get customField :value))
       (setq value (elmine/get customField :value ))
     )
   (if (string= value "")
@@ -659,7 +660,7 @@
 	       (setq issueId (org-entry-get (point) "issue_id"))
 	       (unless (string= prevPropVal propValue)
 		   (progn
-		     (org-insert-heading-after-current)
+		     (org-insert-heading)
 		     (redveu/goto-level 3)
 		     (insert propValue)
 		     (org-move-subtree-up)
@@ -742,7 +743,7 @@
 
   (setq fixedVersion (elmine/get (elmine/get i :fixed_version) :name))
   
-  (org-insert-heading-after-current)
+  (org-insert-heading)
   (redveu/goto-level 3)
 
   (setq assignedToAbbrev "")
@@ -760,8 +761,9 @@
 	)
     )
 
-
-
+  (if (string= assignedToAbbrev2 "Nobody")
+      (setq todoTag "ASSIGN")
+    )
 
   (setq authorAbbrev "NA")
   (if author
@@ -825,7 +827,7 @@
 
   (org-set-property "checkedForComments" "no")
   
-  (org-insert-heading-after-current)
+  (org-insert-heading)
   (redveu/goto-level 4)
   (insert "COMMENT Description" "\n")
   (insert "#+BEGIN_DESCRIPTION" "\n")
@@ -874,7 +876,7 @@
   )
 
 (defun redveu/parse-attachment-to-org(a)
-  (org-insert-heading-after-current)
+  (org-insert-heading)
   (redveu/goto-level 4)
   (insert "Attachment ")
 ;;  (org-insert-link nil (elmine/get a :content_url) (elmine/get a :filename))
@@ -892,7 +894,7 @@
 (defun redveu/parse-journal-to-org(j)
   (if (/= 0 (length (elmine/get j :notes))) 
       (progn
-	(org-insert-heading-after-current)
+	(org-insert-heading)
 	(redveu/goto-level 4)
 	(insert "COMMENT " (elmine/get (elmine/get j :user) :name) " on " (elmine/get j :created_on) "\n")
 	(insert "#+BEGIN_COMMENT" "\n")

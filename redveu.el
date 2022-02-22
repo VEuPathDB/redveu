@@ -49,7 +49,7 @@
    (if query_id 
        (progn (redveu/init query_id "PROJECT")
 	      (redveu/parse-projects-to-org 
-	       (elmine/get-projects :query_id query_id)
+	       (elmine/get-projects :query_id query_id :limit t)
 	       )
 	      )
      )
@@ -554,7 +554,7 @@
    (if query_id 
        (progn (redveu/init query_id "ISSUE")
 	      (redveu/parse-issues-to-org 
-	       (elmine/get-issues :query_id query_id)
+	       (elmine/get-issues :query_id query_id :limit t)
 	       )
 	      )
      )
@@ -577,7 +577,7 @@
   (if query_id
       (progn (redveu/init query_id "ISSUE")
 	     (redveu/parse-issues-to-org 
-	      (elmine/get-issues :query_id query_id)
+	      (elmine/get-issues :query_id query_id :limit t)
 	      )
 	     )
     (error "Not a valid selection")
@@ -699,7 +699,7 @@
   
   (if (string= queryType "ISSUE")
       (progn (redveu/parse-issues-to-org 
-	      (elmine/get-issues :query_id queryId)
+	      (elmine/get-issues :query_id queryId :limit t)
 	      )
 	     )
       )

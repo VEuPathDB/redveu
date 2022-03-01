@@ -948,6 +948,25 @@
 	 ))
 
 
+(map! :leader
+      (:prefix-map ("C-r" . "redveu")
+       :desc "Update assigned to" "a" #'redveu/update-assigned-to
+       :desc "Update pip" "p" #'redveu/update-pip
+       :desc "Update status" "u" #'redveu/update-status
+       :desc "Update subject" "j" #'redveu/update-subject
+       :desc "Update tracker" "k" #'redveu/update-tracker
+       :desc "Update version" "v" #'redveu/update-version
+       :desc "Update priority" "y" #'redveu/update-priority
+       :desc "Update veupathdb team" "e" #'redveu/update-veupathdb-team
+       :desc "Update manager concern" "n" #'redveu/update-manager-concern
+       :desc "Add Comment" "c" #'redveu/add-comment
+       :desc "Refresh Query" "r" #'redveu/refresh-query
+       :desc "Group Issues By" "g" #'redveu/group-issues
+       :desc "Create Task" "t" #'redveu/create-issue
+       :desc "Create Sub Task" "b" #'redveu/create-subtask
+       :desc "Get Issues By ID" "s" #'redveu/get-issues-by-id))
+
+
 ;; (defun redveu/clear-subtree ()
 ;;   (interactive)
 ;;   (org-mark-subtree) ;; mark the current subtree

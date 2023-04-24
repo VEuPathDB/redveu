@@ -16,6 +16,13 @@
 (setq redveu/manager-concern-property nil)
 (setq redveu/pip-property nil)
 
+(setq redveu/prioritiesHeadline (make-hash-table :test 'equal))
+(puthash "Immediate" "A" redveu/prioritiesHeadline)
+(puthash "Urgent" "B" redveu/prioritiesHeadline)
+(puthash "High" "C" redveu/prioritiesHeadline)
+(puthash "Normal" "D" redveu/prioritiesHeadline)
+(puthash "Low" "E" redveu/prioritiesHeadline)
+
 (defun redveu/makeHash(objs hash)
   (when objs
     (setq o (car objs))
@@ -786,10 +793,10 @@
 
   
   (insert
-   (format "%-80s %-26s %-10s"
+   (format "%-85s %-26s %-10s"
 ;;   		  (concat authorAbbrev "->" assignedToAbbrev)
 ;;		  (substring projectName 0 (min 20 (length projectName)))
-	   (concat todoTag " " (substring subject 0 (min 70 (length subject))) "..." )
+	   (concat todoTag " [#" (gethash priority redveu/prioritiesHeadline) "] " (substring subject 0 (min 70 (length subject))) "..." )
 	   (concat " /" (substring projectName 0 (min 20 (length projectName))) ".../")
            (concat  ":" assignedToAbbrev2 ":")
    		  )

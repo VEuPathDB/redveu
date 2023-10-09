@@ -377,7 +377,7 @@
     (completing-read "Assigned To: " (if (> (hash-table-count redveu/users)  0)
 					(cons "None" (hash-table-keys redveu/users))
 				      (progn
-					;; TODO: The project name here is hard coded (kjowxz).  Each project has a list of member/users.  Could look up theh users for each project in that way.  
+					;; TODO: The project name here is hard coded (kjowxz).  Each project has a list of member/users.  Could look up theh users for each project in that way.
 					(redveu/makeUsersHash (elmine/api-get-all :memberships "/projects/kjowxz/memberships.json" :limit 100) redveu/users)
 					(cons "None" (hash-table-keys redveu/users))
 					)
@@ -397,7 +397,7 @@
     (completing-read "Milestone: " (if (> (hash-table-count redveu/versions)  0)
 					(cons "None" (hash-table-keys redveu/versions))
 				      (progn
-					;; TODO: The project name here is hard coded (kjowxz).  
+					;; TODO: The project name here is hard coded (kjowxz).
 					(redveu/makeHash (elmine/api-get-all :versions "/projects/kjowxz/versions.json" :limit 100) redveu/versions)
 					(cons "None" (hash-table-keys redveu/versions))
 					)
@@ -411,12 +411,11 @@
    )
 
   (setq projectId (org-entry-get (point) "project_id"))
-  (setq issueId (org-entry-get (point) "issue_id"))  
+  (setq issueId (org-entry-get (point) "issue_id"))
   (if projectId
-      (progn 
+      (progn
 	(setq issue '())
 	(setq issue (plist-put issue :project_id projectId))
-	(setq issue (plist-put issue :parent_issue_id issueId))
 	(setq issue (plist-put issue :subject subject))
 	(setq issue (plist-put issue :description description))
 	(setq issue (plist-put issue :tracker_id (gethash tracker redveu/trackers)))
@@ -425,7 +424,7 @@
 	    nil
 	    (setq issue (plist-put issue :fixed_version_id (gethash version redveu/versions)))
 	  )
-	
+
 	(if (string= assignedTo "None")
 	    nil
 	    (setq issue (plist-put issue :assigned_to_id (gethash assignedTo redveu/users)))
@@ -443,6 +442,115 @@
   )
 
 
+
+(defun redveu/create-issue-from-org-headline (priority tracker assignedTo veupathTeam version &optional arg)
+  (interactive
+   (list
+    (completing-read "Priority: " (if (> (hash-table-count redveu/priorities)  0)
+				      (hash-table-keys redveu/priorities)
+				    (progn
+				      (redveu/makeHash (elmine/get-issue-priorities) redveu/priorities)
+				      (hash-table-keys redveu/priorities)
+				      )
+				    )
+		     nil nil "Normal"
+		     )
+    (completing-read "Tracker: " (if (> (hash-table-count redveu/trackers)  0)
+					(hash-table-keys redveu/trackers)
+				      (progn
+					(redveu/makeHash (elmine/get-trackers) redveu/trackers)
+					(hash-table-keys redveu/trackers)
+					)
+				      )
+		     nil nil "Task"
+		     )
+
+    (completing-read "Assigned To: " (if (> (hash-table-count redveu/users)  0)
+					(cons "None" (hash-table-keys redveu/users))
+				      (progn
+					;; TODO: The project name here is hard coded (kjowxz).  Each project has a list of member/users.  Could look up theh users for each project in that way.
+					(redveu/makeUsersHash (elmine/api-get-all :memberships "/projects/kjowxz/memberships.json" :limit 100) redveu/users)
+					(cons "None" (hash-table-keys redveu/users))
+					)
+				      )
+		     nil nil "None"
+		     )
+
+    (completing-read "VEuPath Team: " (if redveu/veupathdb-team-property
+					(mapcar #'(lambda(x) (elmine/get x :value)) (elmine/get redveu/veupathdb-team-property :possible_values))
+				      (progn
+					(redveu/set-custom-properties)
+					(mapcar #'(lambda(x) (elmine/get x :value)) (elmine/get redveu/veupathdb-team-property :possible_values))
+					)
+				      )
+		     nil nil "Data Development"
+		     )
+    (completing-read "Milestone: " (if (> (hash-table-count redveu/versions)  0)
+					(cons "None" (hash-table-keys redveu/versions))
+				      (progn
+					;; TODO: The project name here is hard coded (kjowxz).
+					(redveu/makeHash (elmine/api-get-all :versions "/projects/kjowxz/versions.json" :limit 100) redveu/versions)
+					(cons "None" (hash-table-keys redveu/versions))
+					)
+				      )
+		     nil nil "None"
+		     )
+    current-prefix-arg
+    )
+   )
+
+  ;; would be good to do this interactively
+  (let* ((element (org-element-at-point))
+         (type (org-element-type element)))
+    (if (eq type 'headline)
+        (let* ((heading (org-element-property :title element))
+               (end (org-element-property :contents-end element))
+               (content (buffer-substring-no-properties end
+                                                            (line-end-position))))
+
+          (setq description (format "%s" content))
+          (setq subject (format "%s" heading))
+          )))
+  ;; to to either project or issue
+  (outline-up-heading 1)
+
+  (setq projectId (org-entry-get (point) "project_id"))
+  (setq issueId (org-entry-get (point) "issue_id"))
+  (if projectId
+      (progn
+	(setq issue '())
+	(setq issue (plist-put issue :project_id projectId))
+
+	(setq issue (plist-put issue :subject subject))
+
+        (if description
+            (setq issue (plist-put issue :description description))
+          )
+	(setq issue (plist-put issue :tracker_id (gethash tracker redveu/trackers)))
+
+	(if (string= version "None")
+	    nil
+	    (setq issue (plist-put issue :fixed_version_id (gethash version redveu/versions)))
+	  )
+
+	(if (string= assignedTo "None")
+	    nil
+	    (setq issue (plist-put issue :assigned_to_id (gethash assignedTo redveu/users)))
+	  )
+	(setq issue (plist-put issue :priority_id (gethash priority redveu/priorities)))
+ 	(setq customField '())
+	(setq customField (plist-put customField :id (elmine/get redveu/veupathdb-team-property :id)))
+	(setq customField (plist-put customField :value veupathTeam))
+	(setq customFields (vector customField))
+	(setq issue (plist-put issue :custom_fields customFields))
+	(elmine/create-issue issue)
+	)
+    (error "Could not find a property of project_id")
+    )
+  )
+
+
+
 (defun redveu/update-issue-property (element propertyId)
   (setq issueId (org-entry-get (point) "issue_id"))
   (if issueId
@@ -451,7 +559,7 @@
 	(setq issue (plist-put issue :id issueId))
 	(setq issue (plist-put issue element propertyId))
 	(elmine/update-issue issue)
-	(redveu/refresh-issue issueId)
+	(redveu/update-issue issueId)
 	)
     (error "Could not find a property of issue_id")
     )
@@ -471,7 +579,7 @@
 
 	(setq issue (plist-put issue :custom_fields customFields))
 	(elmine/update-issue issue)
-	(redveu/refresh-issue issueId)
+	(redveu/update-issue issueId)
 	)
     (error "Could not find a custom custom property")
     )
@@ -524,10 +632,10 @@
 (defun redveu/goto-level(l)
   (while (/= (org-outline-level) l)
     (if (> (org-outline-level) l)
-	(org-promote)
+	(org-promote-subtree)
       )
     (if (< (org-outline-level) l)
-	(org-demote)
+	(org-demote-subtree)
       )
     )
   )
@@ -612,7 +720,7 @@
 
 (defun redveu/parse-issues-to-org(issues)
   (when issues
-    (redveu/parse-issue-to-org(car issues))
+    (redveu/parse-issue-to-org(car issues) 3)
     (redveu/parse-issues-to-org(cdr issues))
     )
   )
@@ -656,7 +764,7 @@
 				      ) current-prefix-arg))
 
   (setq queryId (org-entry-get (point) "query_id"))
-  (if queryId 
+  (if queryId
       (progn (org-sort-entries nil ?r nil nil prop)
 	     (outline-next-visible-heading 1)
 	     (setq prevPropVal nil)
@@ -681,15 +789,14 @@
 		 )
 	       (setq nextIssueId (org-entry-get (point) "issue_id"))
 	       (if (string=  nextIssueId issueId)
-		   (setq nextIssueId nil)		   
+		   (setq nextIssueId nil)
 		   )
-		   
+
 	       )
 	     )
     )
     (org-set-startup-visibility)
   )
-
 
 
 (defun redveu/refresh-query(arg)
@@ -705,7 +812,7 @@
   (redveu/init queryId queryType)
   
   (if (string= queryType "ISSUE")
-      (progn (redveu/parse-issues-to-org 
+      (progn (redveu/parse-issues-to-org
 	      (elmine/get-issues :query_id queryId :limit t)
 	      )
 	     )
@@ -722,23 +829,45 @@
 
 
 
-(defun redveu/refresh-issue(issueId)
+(defun redveu/update-issue(issueId)
+  (setq issueOutlineLevel (org-outline-level))
   (org-cut-subtree)
   (previous-line)
-  (setq issue (elmine/get-issue (string-to-number issueId)  :include "journals,attachments"))
-  (redveu/parse-issue-to-org issue)
-  (redveu/parse-journals-to-org (elmine/get issue :journals))
-  (redveu/parse-attachments-to-org (elmine/get issue :attachments))
+  (setq issue (elmine/get-issue (string-to-number issueId)  :include "journals,attachments,children"))
+  (redveu/parse-issue-to-org issue issueOutlineLevel)
+  (redveu/parse-journals-to-org (elmine/get issue :journals) issueOutlineLevel)
+  (redveu/parse-attachments-to-org (elmine/get issue :attachments) issueOutlineLevel)
 
   ;; do this to get back to the issue part instead of descriptions/comments
-  (outline-up-heading 1)
+  ;;(outline-up-heading 1)
   )
 
-(defun redveu/parse-issue-to-org(i)
+
+(defun redveu/refresh-issue(arg)
+  "refresh previously run query"
+  (interactive "P")
+  (setq issueId (org-entry-get (point) "issue_id"))
+
+
+  (setq issueOutlineLevel (org-outline-level))
+  (org-cut-subtree)
+  (previous-line)
+  (setq issue (elmine/get-issue (string-to-number issueId)))
+  (redveu/parse-issue-to-org issue issueOutlineLevel)
+
+
+
+  ;; do this to get back to the issue part instead of descriptions/comments
+  ;;(outline-up-heading 1)
+  ;;(org-cycle)
+  )
+
+
+(defun redveu/parse-issue-to-org(i l)
   (setq projectName (elmine/get (elmine/get i :project) :name))
   (setq projectId (elmine/get (elmine/get i :project) :id))
 
-  (setq issueId (elmine/get i :id))
+    (setq issueId (elmine/get i :id))
   (setq status (elmine/get (elmine/get i :status) :name))
   (setq priority (elmine/get (elmine/get i :priority) :name))
   (setq tracker (elmine/get (elmine/get i :tracker) :name))
@@ -751,7 +880,7 @@
   (setq fixedVersion (elmine/get (elmine/get i :fixed_version) :name))
   
   (org-insert-heading)
-  (redveu/goto-level 3)
+  (redveu/goto-level l)
 
   (setq assignedToAbbrev "")
   (setq assignedToAbbrev2 "Nobody")
@@ -796,22 +925,22 @@
    (format "%-85s %-26s %-10s"
 ;;   		  (concat authorAbbrev "->" assignedToAbbrev)
 ;;		  (substring projectName 0 (min 20 (length projectName)))
-	   (concat todoTag " [#" (gethash priority redveu/prioritiesHeadline) "] " (substring subject 0 (min 70 (length subject))) "..." )
+	   (concat "[#" (gethash priority redveu/prioritiesHeadline) "] " (substring subject 0 (min 70 (length subject))) "..." )
 	   (concat " /" (substring projectName 0 (min 20 (length projectName))) ".../")
            (concat  ":" assignedToAbbrev2 ":")
    		  )
    	  )
 
   (insert "\n\n")
-  (org-cycle)
-  (insert (concat "[[" (concat elmine/host "/issues/" (number-to-string issueId)) "][Issue Page]]\n"))
-  
-  (org-cycle)
-  (insert (concat "[[" (concat elmine/host "/projects/" (number-to-string projectId) "/issues/new?subtask_for_id=" (number-to-string issueId)) "][Add Subtask]]\n"))
+  ;; (org-cycle)
+  ;; (insert (concat "[[" (concat elmine/host "/issues/" (number-to-string issueId)) "][Issue Page]]\n"))
 
-  (org-cycle)
-  (insert (concat "[[" (concat elmine/host "/projects/" (number-to-string projectId) "/issues/new") "][New Issue (" projectName ")]]\n"))
-  
+  ;; (org-cycle)
+  ;; (insert (concat "[[" (concat elmine/host "/projects/" (number-to-string projectId) "/issues/new?subtask_for_id=" (number-to-string issueId)) "][Add Subtask]]\n"))
+
+  ;; (org-cycle)
+  ;; (insert (concat "[[" (concat elmine/host "/projects/" (number-to-string projectId) "/issues/new") "][New Issue (" projectName ")]]\n"))
+
   (org-insert-property-drawer)
 
   (org-set-property "issue_id" (format "%s" issueId))
@@ -820,6 +949,8 @@
   (org-set-property "priorityZ" priority)
   (org-set-property "tracker" tracker)
   (org-set-property "author" author)
+
+
   (if assignedTo
       (org-set-property "assigned_to" assignedTo)
     )
@@ -833,13 +964,9 @@
   (redveu/parse-custom-fields-to-property (elmine/get i :custom_fields))
 
   (org-set-property "checkedForComments" "no")
+
+
   
-  (org-insert-heading)
-  (redveu/goto-level 4)
-  (insert "COMMENT Description" "\n")
-  (insert "#+BEGIN_DESCRIPTION" "\n")
-  (insert (redveu/clean-description (elmine/get i :description)) "\n")
-  (insert "#+END_DESCRIPTION" "\n")
   )
 
 ;; could this be done automatically when user opens an issue section?
@@ -853,14 +980,23 @@
     )
   )
 
-(defun redveu/add-journals-and-attachments(issueId)
-  (setq i (elmine/get-issue issueId :include "journals,attachments"))
+(defun redveu/add-journals-and-attachments(issueId issueOutlineLevel)
+  (setq i (elmine/get-issue issueId :include "journals,attachments,relations,children"))
 
   (setq journals (elmine/get i :journals))
   (setq attachments (elmine/get i :attachments))
+  (setq children (elmine/get i :children))
+  (setq relations (elmine/get i :relations))
 
-  (redveu/parse-journals-to-org journals)
-  (redveu/parse-attachments-to-org attachments)
+
+  (org-insert-heading)
+  (redveu/goto-level (+ issueOutlineLevel 1))
+  (insert "DESCRIPTION" "\n")
+  (insert (redveu/clean-description (elmine/get i :description)) "\n")
+
+  (redveu/parse-journals-to-org journals issueOutlineLevel)
+  (redveu/parse-attachments-to-org attachments issueOutlineLevel)
+  (redveu/parse-children-to-org children issueOutlineLevel)
 
   (setq noteCount 0)
   (while journals
@@ -871,38 +1007,71 @@
     (setq journals (cdr journals))
     )
 
-  (+ (length attachments) noteCount)
+  (+ (length attachments) noteCount (length children))
   )
 
 
-(defun redveu/parse-attachments-to-org(attachments)
+(defun redveu/parse-attachments-to-org(attachments l)
   (when attachments
-    (redveu/parse-attachment-to-org(car attachments))
-    (redveu/parse-attachments-to-org(cdr attachments))
+    (redveu/parse-attachment-to-org(car attachments) l)
+    (redveu/parse-attachments-to-org(cdr attachments) l)
     )
   )
 
-(defun redveu/parse-attachment-to-org(a)
+
+(defun redveu/parse-children-to-org(children l)
+  (when children
+    (redveu/parse-child-to-org(car children) l)
+    (redveu/parse-children-to-org(cdr children) l)
+    )
+  )
+
+
+(defun redveu/parse-child-to-org(c l)
+  (progn
+    (org-insert-heading)
+
+    (redveu/goto-level (+ l 1))
+    (setq issueId (elmine/get c :id))
+    (setq tracker (elmine/get (elmine/get c :tracker) :name))
+    (setq subject (elmine/get c :subject))
+
+    (insert  "SUBTASK " subject "\n")
+    (org-set-property "issue_id" (format "%s" issueId))
+    (org-set-property "subject" (concat "*" subject "*"))
+    (org-set-property "tracker" tracker)
+    (org-set-property "checkedForComments" "no")
+    (outline-hide-subtree)
+    )
+  )
+
+
+
+(defun redveu/parse-attachment-to-org(a l)
   (org-insert-heading)
-  (redveu/goto-level 4)
+  (redveu/goto-level (+ l 1))
+
+  (message (concat "go to level " (+ l 1)))
   (insert "Attachment ")
 ;;  (org-insert-link nil (elmine/get a :content_url) (elmine/get a :filename))
   (insert (concat "[[" (elmine/get a :content_url) "][" (elmine/get a :filename) "]]"))
   (insert " by " (elmine/get (elmine/get a :author) :name) " on " (elmine/get a :created_on) "\n")
   )
 
-(defun redveu/parse-journals-to-org(journals)
+(defun redveu/parse-journals-to-org(journals l)
   (when journals
-    (redveu/parse-journal-to-org(car journals))
-    (redveu/parse-journals-to-org(cdr journals))
+    (redveu/parse-journal-to-org(car journals) l)
+    (redveu/parse-journals-to-org(cdr journals) l)
     )
   )
 
-(defun redveu/parse-journal-to-org(j)
-  (if (/= 0 (length (elmine/get j :notes))) 
+(defun redveu/parse-journal-to-org(j l)
+  (if (/= 0 (length (elmine/get j :notes)))
       (progn
 	(org-insert-heading)
-	(redveu/goto-level 4)
+
+
+        (redveu/goto-level (+ l 1))
 	(insert "COMMENT " (elmine/get (elmine/get j :user) :name) " on " (elmine/get j :created_on) "\n")
 	(insert "#+BEGIN_COMMENT" "\n")
 	(insert (redveu/clean-description (elmine/get j :notes)) "\n")
@@ -931,6 +1100,8 @@
 
 (defun redveu/org-cycle(arg)
   (interactive "P")
+  (setq issueOutlineLevel (org-outline-level))
+
 
   (setq issueId (org-entry-get (point) "issue_id"))
   (setq checkedForComments (org-entry-get (point) "checkedForComments"))
@@ -940,8 +1111,8 @@
 	(if (fboundp 'org-columns-quit)
 	    (org-columns-quit) 
 	  )
-	(org-set-property "checkedForComments" "done")
-	(if (> (redveu/add-journals-and-attachments issueId) 0)
+        (org-set-property "checkedForComments" "done")
+        (if (> (redveu/add-journals-and-attachments issueId issueOutlineLevel) 0)
 	    (outline-up-heading 1)
 	  )
 	)

@@ -417,6 +417,7 @@
 	(setq issue '())
 	(setq issue (plist-put issue :project_id projectId))
 	(setq issue (plist-put issue :subject subject))
+        (setq issue (plist-put issue :parent_issue_id issueId))
 	(setq issue (plist-put issue :description description))
 	(setq issue (plist-put issue :tracker_id (gethash tracker redveu/trackers)))
 
@@ -833,10 +834,10 @@
   (setq issueOutlineLevel (org-outline-level))
   (org-cut-subtree)
   (previous-line)
-  (setq issue (elmine/get-issue (string-to-number issueId)  :include "journals,attachments,children"))
+  (setq issue (elmine/get-issue (string-to-number issueId)  :include "journals,attachments"))
   (redveu/parse-issue-to-org issue issueOutlineLevel)
-  (redveu/parse-journals-to-org (elmine/get issue :journals) issueOutlineLevel)
-  (redveu/parse-attachments-to-org (elmine/get issue :attachments) issueOutlineLevel)
+  ;;(redveu/parse-journals-to-org (elmine/get issue :journals) issueOutlineLevel)
+  ;;(redveu/parse-attachments-to-org (elmine/get issue :attachments) issueOutlineLevel)
 
   ;; do this to get back to the issue part instead of descriptions/comments
   ;;(outline-up-heading 1)
@@ -922,18 +923,18 @@
 
   
   (insert
-   (format "%-85s %-26s %-10s"
+   (format "%-150s %-26s %-10s"
 ;;   		  (concat authorAbbrev "->" assignedToAbbrev)
 ;;		  (substring projectName 0 (min 20 (length projectName)))
-	   (concat "[#" (gethash priority redveu/prioritiesHeadline) "] " (substring subject 0 (min 70 (length subject))) "..." )
+           (concat "[#" (gethash priority redveu/prioritiesHeadline) "]  [[" (concat elmine/host "/issues/" (number-to-string issueId) "][" (substring subject 0 (min 70 (length subject))) "]]") "..." )
 	   (concat " /" (substring projectName 0 (min 20 (length projectName))) ".../")
            (concat  ":" assignedToAbbrev2 ":")
    		  )
    	  )
 
   (insert "\n\n")
-  ;; (org-cycle)
-  ;; (insert (concat "[[" (concat elmine/host "/issues/" (number-to-string issueId)) "][Issue Page]]\n"))
+  ;;(org-cycle)
+  ;;(insert (concat "[[" (concat elmine/host "/issues/" (number-to-string issueId)) "][Issue Page]]\n"))
 
   ;; (org-cycle)
   ;; (insert (concat "[[" (concat elmine/host "/projects/" (number-to-string projectId) "/issues/new?subtask_for_id=" (number-to-string issueId)) "][Add Subtask]]\n"))
@@ -997,6 +998,7 @@
   (redveu/parse-journals-to-org journals issueOutlineLevel)
   (redveu/parse-attachments-to-org attachments issueOutlineLevel)
   (redveu/parse-children-to-org children issueOutlineLevel)
+  (redveu/parse-relations-to-org relations issueOutlineLevel)
 
   (setq noteCount 0)
   (while journals
@@ -1007,7 +1009,7 @@
     (setq journals (cdr journals))
     )
 
-  (+ (length attachments) noteCount (length children))
+  (+ (length attachments) noteCount (length children) (length relations))
   )
 
 
@@ -1026,6 +1028,13 @@
     )
   )
 
+(defun redveu/parse-relations-to-org(relations l)
+  (when relations
+    (redveu/parse-relation-to-org(car relations) l)
+    (redveu/parse-relations-to-org(cdr relations) l)
+    )
+  )
+
 
 (defun redveu/parse-child-to-org(c l)
   (progn
@@ -1036,7 +1045,7 @@
     (setq tracker (elmine/get (elmine/get c :tracker) :name))
     (setq subject (elmine/get c :subject))
 
-    (insert  "SUBTASK " subject "\n")
+    (insert  "SUBTASK [[" (concat elmine/host "/issues/" (number-to-string issueId) "][" subject "]] \n"))
     (org-set-property "issue_id" (format "%s" issueId))
     (org-set-property "subject" (concat "*" subject "*"))
     (org-set-property "tracker" tracker)
@@ -1044,6 +1053,22 @@
     (outline-hide-subtree)
     )
   )
+
+
+(defun redveu/parse-relation-to-org(c l)
+  (progn
+    (org-insert-heading)
+
+    (redveu/goto-level (+ l 1))
+    (setq issueId (elmine/get c :issue_id))
+    (setq issueToId (elmine/get c :issue_to_id))
+    (setq relationType (elmine/get c :relation_type))
+
+
+    (insert  "[[" (concat elmine/host "/issues/" (number-to-string issueToId) "][" (number-to-string issueToId) "]] " relationType  " [[" (concat elmine/host "/issues/" (number-to-string issueId) "][" (number-to-string issueId) "]]\n")))
+    )
+  )
+
 
 
 
